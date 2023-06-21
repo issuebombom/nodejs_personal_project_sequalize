@@ -1,4 +1,5 @@
 const { User, Post, Comment } = require('../models');
+const errors = require('../static/errors');
 
 // 전체 포스트 확인(공개)
 const getPosts = async (req, res) => {
@@ -20,11 +21,12 @@ const getPosts = async (req, res) => {
       order: [['createdAt', 'DESC']],
     });
 
-    if (getPosts.length === 0) return res.send({ msg: '존재하는 게시글이 없습니다.' });
+    if (getPosts.length === 0)
+      return res.status(errors.noPost.status).send({ msg: errors.noPost.msg });
     res.send({ posts: getPosts });
   } catch (err) {
     console.error(err.name, ':', err.message);
-    return res.status(403).send({ msg: `${err.message}` });
+    return res.status(400).send({ msg: `${err.message}` });
   }
 };
 
@@ -36,7 +38,7 @@ const writePosts = async (req, res) => {
     const findUser = await User.findByPk(userId);
 
     // find 결과가 null일 경우
-    if (!findUser) return res.send({ msg: '해당 유저 정보가 존재하지 않습니다.' });
+    if (!findUser) return res.status(errors.noUser.status).send({ msg: errors.noUser.msg });
 
     const { title, content } = req.body;
     await Post.create({ title, content, userId });
@@ -44,7 +46,7 @@ const writePosts = async (req, res) => {
     res.json({ msg: '게시글 작성 완료' });
   } catch (err) {
     console.error(err.name, ':', err.message);
-    return res.status(500).send({ msg: `${err.message}` });
+    return res.status(400).send({ msg: `${err.message}` });
   }
 };
 
@@ -57,7 +59,7 @@ const editPosts = async (req, res) => {
     const findPost = await Post.findByPk(postId);
 
     // find 결과가 null일 경우
-    if (!findPost) return res.status(404).send({ msg: '해당 게시글이 존재하지 않습니다.' });
+    if (!findPost) return res.status(errors.noPost.status).send({ msg: errors.noPost.msg });
 
     // 수정내용 업데이트
     const update = { title, content };
@@ -66,7 +68,7 @@ const editPosts = async (req, res) => {
     res.status(200).send({ msg: '게시글 수정 완료' });
   } catch (err) {
     console.error(err.name, ':', err.message);
-    return res.status(500).send({ msg: `${err.message}` });
+    return res.status(400).send({ msg: `${err.message}` });
   }
 };
 
@@ -79,7 +81,7 @@ const deletePosts = async (req, res) => {
     const findPost = await Post.findByPk(postId);
 
     // find 결과가 null일 경우
-    if (!findPost) return res.send({ msg: '해당 게시글이 존재하지 않습니다.' });
+    if (!findPost) return res.status(errors.noPost.status).send({ msg: errors.noPost.msg });
 
     // 포스트 삭제
     await Post.destroy({ where: { id: postId } });
@@ -87,7 +89,7 @@ const deletePosts = async (req, res) => {
     res.status(200).send({ msg: `게시글 삭제 완료 (${postId})` });
   } catch (err) {
     console.error(err.name, ':', err.message);
-    return res.status(500).send({ msg: `${err.message}` });
+    return res.status(400).send({ msg: `${err.message}` });
   }
 };
 

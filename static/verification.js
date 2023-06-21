@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User, Post, Comment } = require('../models');
+const errors = require('./errors');
 
 // 엑세스 토큰 생성기
 const getAccessToken = ((username, id) => {
@@ -26,7 +27,7 @@ function verifyAccessToken(req, res, next) {
 
   // 쿠키가 없는 경우
   if (!cookies?.issuebombomCookie)
-    return res.status(403).send({ msg: '엑세스 토큰 검증을 위한 쿠키 없음 (재 로그인 필요)' });
+    return res.status(errors.noCookie.status).send({ msg: errors.noCookie.msg });
 
   // access token 검증
   const accessToken = cookies.issuebombomCookie;
@@ -53,7 +54,8 @@ async function replaceAccessToken(req, res, next) {
       const refreshToken = findUser.refreshToken;
       jwt.verify(refreshToken, process.env.REFRESH_TOKEN_KEY, (err) => {
         // refresh token이 만료된 경우 재로그인 안내
-        if (err) return res.status(403).send({ msg: '리프레시 토큰이 만료됨 (재 로그인 필요)' });
+        if (err)
+          return res.status(errors.expiredRefresh.status).send({ msg: errors.expiredRefresh.msg });
       });
       // 토큰 재발급 및 쿠키로 보냄
       res.cookie('issuebombomCookie', getAccessToken(findUser.username, findUser.id), {
@@ -63,7 +65,7 @@ async function replaceAccessToken(req, res, next) {
       console.log('엑세스 토큰 만료로 재발급 진행');
     } catch (err) {
       console.error(err.name, ':', err.message);
-      return res.status(500).send({ msg: `${err.message}` });
+      return res.status(400).send({ msg: `${err.message}` });
     }
   }
   next();
@@ -78,14 +80,14 @@ async function verificationForPosts(req, res, next) {
   try {
     const findPost = await Post.findByPk(postId);
 
-    if (!findPost) return res.status(404).send({ msg: '해당 게시글이 존재하지 않습니다.' });
+    if (!findPost) return res.status(errors.noPost.status).send({ msg: errors.noPost.msg });
 
     if (findPost.userId !== userId)
-      return res.status(403).send({ msg: '해당 게시글의 수정 권한이 없습니다.' });
+      return res.status(errors.cantChangePost.status).send({ msg: errors.cantChangePost.msg });
     next();
   } catch (err) {
     console.error(err.name, ':', err.message);
-    return res.status(500).send({ msg: `${err.message}` });
+    return res.status(400).send({ msg: `${err.message}` });
   }
 }
 
@@ -99,16 +101,19 @@ async function verificationForComments(req, res, next) {
     const findPost = await Post.findByPk(postId);
     const findComment = await Comment.findByPk(commentId);
 
-    if (!findPost) return res.status(404).send({ msg: '해당 게시글이 존재하지 않습니다.' });
+    if (!findPost) return res.status(errors.noPost.status).send({ msg: errors.noPost.msg });
 
-    if (!findComment) return res.status(404).send({ msg: '해당 댓글이 존재하지 않습니다.' });
+    if (!findComment)
+      return res.status(errors.noComment.status).send({ msg: errors.noComment.msg });
 
     if (findComment.userId !== userId)
-      return res.status(403).send({ msg: '해당 댓글의 수정 권한이 없습니다.' });
+      return res
+        .status(errors.cantChangeComment.status)
+        .send({ msg: errors.cantChangeComment.msg });
     next();
   } catch (err) {
     console.error(err.name, ':', err.message);
-    return res.status(500).send({ msg: `${err.message}` });
+    return res.status(400).send({ msg: `${err.message}` });
   }
 }
 

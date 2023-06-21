@@ -1,13 +1,14 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { getAccessToken, getRefreshToken } = require('../static/verification'); // 토큰 생성기
+const errors = require('../static/errors');
 
 const login = async (req, res) => {
   const { username } = req.body;
   try {
     // 데이터베이스에서 유저 정보 조회
     const findUser = await User.findOne({ where: { username } });
-    if (!findUser) return res.status(401).send({ msg: '회원이 아닙니다.' });
+    if (!findUser) return res.status(errors.notUser.status).send({ msg: errors.notUser.msg });
 
     // 엑세스 토큰을 쿠키로 보냄
     res.cookie('issuebombomCookie', getAccessToken(username, findUser.id), {
@@ -22,7 +23,7 @@ const login = async (req, res) => {
     res.status(200).send({ msg: '로그인 완료' });
   } catch (err) {
     console.error(err.name, ':', err.message);
-    return res.status(500).send({ msg: `${err.message}` });
+    return res.status(400).send({ msg: `${err.message}` });
   }
 };
 
