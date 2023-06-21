@@ -20,7 +20,7 @@ module.exports = {
           },
           is: {
             args: /^[a-zA-Z0-9]+$/,
-            msg: 'Field must contain only letters',
+            msg: '영문 대소문자, 숫자만 입력이 가능합니다.',
           },
         },
       },
@@ -34,7 +34,7 @@ module.exports = {
           },
           is: {
             args: /^[a-zA-Z0-9!@#$%^&*()]+$/,
-            msg: 'Field must contain only letters',
+            msg: '영문 대소문자, 숫자, 특수기호만 입력이 가능합니다.',
           },
         },
       },
@@ -60,5 +60,5 @@ module.exports = {
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('Users');
-  }
+  },
 };
