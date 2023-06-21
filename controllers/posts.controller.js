@@ -17,7 +17,7 @@ const getPosts = async (req, res) => {
           attributes: ['content'],
         },
       ],
-      sort: [['createdAt', 'DESC']], // order도 가능
+      order: [['createdAt', 'DESC']],
     });
 
     if (getPosts.length === 0) return res.send({ msg: '존재하는 게시글이 없습니다.' });
@@ -59,7 +59,7 @@ const editPosts = async (req, res) => {
     // find 결과가 null일 경우
     if (!findPost) return res.status(404).send({ msg: '해당 게시글이 존재하지 않습니다.' });
 
-    // 수정일자 업데이트
+    // 수정내용 업데이트
     const update = { title, content };
     await Post.update(update, { where: { id: postId } });
 
