@@ -257,4 +257,110 @@ sequelize의 경우는 RDBMS답게 include라는 JOIN 쿼리를 통해 두 테�
 | deleteOne | destroy   |
 | sort      | order     |
 
-### 정리할 내용
+### 에러메시지 획일화
+
+에러메시지가 동일한 상황에서도 다른 메시지 형태로 전달하는 경우가 많아서 모듈화 하여 일관성을 유지할 수 있도록 조치하였다.
+
+```javascript
+class ErrorMessage {
+  constructor(status, msg) {
+    this.status = status;
+    this.msg = msg;
+  }
+}
+
+const errors = {
+  noUser: new ErrorMessage(404, '해당 유저 정보가 존재하지 않습니다.'),
+  noPost: new ErrorMessage(404, '해당 게시글이 존재하지 않습니다.'),
+  noComment: new ErrorMessage(404, '해당 댓글이 존재하지 않습니다.'),
+
+  notUser: new ErrorMessage(401, '회원이 아닙니다.'),
+  existUser: new ErrorMessage(412, '해당 아이디가 이미 존재합니다.'),
+  passwordDiff: new ErrorMessage(412, '패스워드와 패스워드 확인이 일치하지 않습니다.'),
+  nameInPassword: new ErrorMessage(412, '닉네임 정보를 비밀번호에 적용할 수 없습니다.'),
+
+  noCookie: new ErrorMessage(403, '엑세스 토큰 검증을 위한 쿠키 없음 (재 로그인 필요)'),
+  expiredRefresh: new ErrorMessage(403, '리프레시 토큰이 만료됨 (재 로그인 필요)'),
+  cantChangePost: new ErrorMessage(403, '해당 게시글의 수정 권한이 없습니다.'),
+  cantChangeComment: new ErrorMessage(403, '해당 댓글의 수정 권한이 없습니다.'),
+};
+
+module.exports = errors;
+```
+
+ErrorMessage라는 클래스에 객체 형태로 status와 message를 담는 방식으로 간단하게 구성하여 신규 에러 메시지 생성 시 간단하게 추가할 수 있도록 구현하였다.
+
+```javascript
+// Before
+if (!findUser) return res.status(404).send({ msg: '해당 유저 정보가 존재하지 않습니다.' });
+// After
+const errors = require('../static/errors');
+if (!findUser) return res.status(errors.noUser.status).send({ msg: errors.noUser.msg });
+```
+
+위와 같이 적용 가능하며 만일 메시지 또는 status의 변경이 필요할 경우 일괄 적용이 가능하다는 장점이 있다.  
+하지만 데이터베이스 상태가 원활하지 못하거나, 일시적인 오류로 쿠키를 가져오지 못하는 등에 대한 오류에 대해서는 try, catch문으로 적용 중이며, 해당 문제에 대한 에러 케이스는 한가지로 정의할 수 없기에 status와 문구를 고정적으로 설정하지 않고 아래와 같이 사용 중에 있다.
+
+```javascript
+// 유저 조회
+const getUsers = async (req, res) => {
+  try {
+    const findUsers = await User.findAll({
+      attributes: {
+        exclude: ['password', 'refreshToken'],
+      },
+    });
+
+    res.send(findUsers);
+  } catch (err) {
+    console.error(err.name, ':', err.message);
+    return res.status(400).send({ msg: `${err.message}` });
+  }
+};
+```
+
+데이터베이스와의 통신 문제로 findAll 메서드가 원활히 동작하지 않을 경우 catch로 이동하며, 해당 에러에서 획득한 name과 message를 출력하도록 구현하였다.
+
+### 데이터베이스 접속 정보 보호 (config.json)
+
+config.json파일에 MySQL 접속을 위한 username, password, host 정보가 담겨있다. 이를 dotenv 모듈을 사용하여 숨김처리하고 싶지만 json파일에 자바스크립트 코드를 명령할 수는 없다. 그래서 config.json파일을 대체할 파일이 필요하다.  
+아래 코드는 json파일을 js파일로 변환한 결과이다. github에 올리는 것을 방지하기 위해 아래와 같은 파일 전환이 필요하다.
+
+```javascript
+// config.js
+require('dotenv').config();
+
+const development = {
+  username: process.env.MYSQL_USERNAME,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+  host: process.env.MYSQL_HOST,
+  dialect: 'mysql',
+};
+
+const test = {
+  username: 'root',
+  password: null,
+  database: 'database_test',
+  host: '127.0.0.1',
+  dialect: 'mysql',
+};
+
+const production = {
+  username: 'root',
+  password: null,
+  database: 'database_production',
+  host: '127.0.0.1',
+  dialect: 'mysql',
+};
+
+module.exports = { development, test, production };
+```
+
+또한 기존 json파일을 활용했던 models/index.js 파일에서도 json이 아닌 js파일을 가져올 수 있도록 아래와 같이 수정이 필요하다.
+
+```javascript
+const config = require(__dirname + '/../config/config.js')[env];
+```
+
+이와 같이 js파일을 불러오도록 경로를 변경하였다.
