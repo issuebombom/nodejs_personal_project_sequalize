@@ -216,10 +216,9 @@ await Post.update(update, { where: { id: postId } });
 // mongoose
 const getPosts = async (req, res) => {
   const getPosts = await Post.find({})
-    .select('-password')
     .populate({
       path: 'user',
-      select: '-password -refreshToken -createdAt -updatedAt',
+      select: '-refreshToken -createdAt -updatedAt',
     })
     .sort({ _id: -1 });
 };
