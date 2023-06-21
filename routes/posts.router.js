@@ -8,7 +8,7 @@ const {
   replaceAccessToken,
   verificationForPosts,
   verificationForComments,
-} = require('../verification'); // 토큰 검증을 위한 미들웨어
+} = require('../static/verification'); // 토큰 검증을 위한 미들웨어
 
 const postsRouter = express.Router();
 postsRouter.use(cookieParser());
