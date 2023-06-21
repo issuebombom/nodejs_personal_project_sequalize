@@ -17,9 +17,9 @@ module.exports = (sequelize, DataTypes) => {
       });
 
       this.hasMany(models.Comment, {
-        sourceKey: 'id', 
-        foreignKey: 'userId'
-      })
+        sourceKey: 'id',
+        foreignKey: 'userId',
+      });
     }
   }
   User.init(

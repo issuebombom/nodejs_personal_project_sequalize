@@ -61,7 +61,8 @@ const editComments = async (req, res) => {
   try {
     const findComment = await Comment.findByPk(commentId);
 
-    if (!findComment) return res.status(errors.noComment.status).send({ msg: errors.noComment.msg });
+    if (!findComment)
+      return res.status(errors.noComment.status).send({ msg: errors.noComment.msg });
 
     // 수정일자 업데이트
     const update = { content };
@@ -83,7 +84,8 @@ const deleteComments = async (req, res) => {
 
     if (!findPost) return res.status(errors.noPost.status).send({ msg: errors.noPost.msg });
 
-    if (!findComment) return res.status(errors.noComment.status).send({ msg: errors.noComment.msg });
+    if (!findComment)
+      return res.status(errors.noComment.status).send({ msg: errors.noComment.msg });
 
     // 댓글 삭제
     await Comment.destroy({ where: { id: commentId } });
