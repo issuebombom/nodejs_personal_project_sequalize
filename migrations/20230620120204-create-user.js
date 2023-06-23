@@ -25,7 +25,7 @@ module.exports = {
         },
       },
       password: {
-        type: Sequelize.STRING(20),
+        type: Sequelize.STRING.BINARY,
         allowNull: false,
         validate: {
           len: {

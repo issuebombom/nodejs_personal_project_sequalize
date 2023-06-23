@@ -11,6 +11,7 @@ const errors = {
   noComment: new ErrorMessage(404, '해당 댓글이 존재하지 않습니다.'),
 
   notUser: new ErrorMessage(401, '회원이 아닙니다.'),
+  passwordWrong: new ErrorMessage(401, '패스워드가 틀렸습니다.'),
   existUser: new ErrorMessage(412, '해당 아이디가 이미 존재합니다.'),
   passwordDiff: new ErrorMessage(412, '패스워드와 패스워드 확인이 일치하지 않습니다.'),
   nameInPassword: new ErrorMessage(412, '닉네임 정보를 비밀번호에 적용할 수 없습니다.'),
