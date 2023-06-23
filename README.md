@@ -39,6 +39,10 @@
 > - [x] 기존 mongoose 방식을 sequelize 방식으로 변경
 >   - [x] 마이그레이션 파일 수정
 >   - [x] controllers의 CRUD 문법을 sequelize 문법으로 수정
+> - [x] 에러 문구 모듈화
+> - [x] bcrypt를 적용하여 비밀번호 해시 적용
+
+---
 
 ## 주요 진행 내역
 
@@ -131,6 +135,8 @@ await queryInterface.dropTable('Comments');
 
 기존 방식의 경우 constraint 설정을 삭제하는 과정이 없었고, 또한 constraint의 이름이 명시되어 있지 않아 삭제할 방법도 없었기에 문제가 발생했던 것 같다. 위 문제를 해결하면서 필드별 foreign key 설정 뿐 아니라 addConstraint 메서드로 foreign key를 설정하는 방식도 배울 수 있었다. 하지만 **_최종적으로 addIndex 기능을 추가했을 때의 이점을 명확히 이해하지 못하여 반영하지 않았다._**
 
+---
+
 ### mongoose to sequelize
 
 기존 mongoose에서 제대로 반영하지 못했던 관계형 데이터베이스 기반 자동 처리가 sequelize에서 반영되어 코드가 한결 가벼워 졌다.
@@ -210,6 +216,8 @@ await Post.update(update, { where: { id: postId } });
 
 또한 게시글 수정 시 updatedAt 또한 자동으로 반영되므로 해당 부분을 신경 쓸 필요가 없게 되었다.
 
+---
+
 #### mongoose와 sequelize의 JOIN 방식
 
 ```javascript
@@ -255,6 +263,8 @@ sequelize의 경우는 RDBMS답게 include라는 JOIN 쿼리를 통해 두 테�
 | updateOne | update    |
 | deleteOne | destroy   |
 | sort      | order     |
+
+---
 
 ### 비밀번호 해싱 처리
 
@@ -310,7 +320,9 @@ if (!isPasswordValid)
 
 compare 메서드를 통해 body로 입력받은 비밀번호와 데이터베이스에 저장된 해싱 암호의 일치를 비교합니다.
 
-### 에러메시지 획일화
+---
+
+### 에러메시지 모듈화
 
 에러메시지가 동일한 상황에서도 다른 메시지 형태로 전달하는 경우가 많아서 모듈화 하여 일관성을 유지할 수 있도록 조치하였다.
 
@@ -373,6 +385,8 @@ const getUsers = async (req, res) => {
 ```
 
 데이터베이스와의 통신 문제로 findAll 메서드가 원활히 동작하지 않을 경우 catch로 이동하며, 해당 에러에서 획득한 name과 message를 출력하도록 구현하였다.
+
+---
 
 ### 데이터베이스 접속 정보 보호 (config.json)
 
