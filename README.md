@@ -256,6 +256,60 @@ sequelize의 경우는 RDBMS답게 include라는 JOIN 쿼리를 통해 두 테�
 | deleteOne | destroy   |
 | sort      | order     |
 
+### 비밀번호 해싱 처리
+
+회원가입 시 유저의 비밀번호가 데이터베이스에 그대로 노출되지 않도록 해싱 처리 후 저장합니다.
+
+해싱 처리를 위한 패키지를 설치합니다.
+
+```zsh
+npm install bcrypt
+```
+
+user모델에서 User.init 아래 아래 메서드를 추가해줍니다. 이로서 유저 생성 전 비밀번호의 해싱 처리가 이루어 집니다.  
+`bcrypt` 패키지를 사용하고, saltRounds를 10으로 입력해서 해싱 암호를 좀 더 강화합니다.
+
+```javascript
+// user.js
+const bcrypt = require('bcrypt');
+User.beforeCreate(async (user) => {
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(user.password, saltRounds);
+  console.log(hashedPassword);
+  user.password = hashedPassword;
+});
+```
+
+해싱 적용을 위해 마이그레이션 파일을 일부 수정했습니다. 기존에는 비밀번호 길이 제약을 위해 STRING(20) 객체를 생성했었는데 이를 255로 변경하고 추가로 BINARY를 추가했습니다. 길이 제한을 두면 해싱 암호가 잘려서 저장되므로 인증 과정에서 일치 검증이 불가해 집니다.
+
+```javascript
+password: {
+        type: Sequelize.STRING.BINARY,
+        allowNull: false,
+        validate: {
+          len: {
+            args: [4, 20],
+            msg: '최소 4자 이상 입력해야 합니다.',
+          },
+          is: {
+            args: /^[a-zA-Z0-9!@#$%^&*()]+$/,
+            msg: '영문 대소문자, 숫자, 특수기호만 입력이 가능합니다.',
+          },
+        },
+      },
+```
+
+마지막으로 로그인 기능에서 비밀번호 검증을 위한 코드를 아래와 같이 추가해 줍니다.
+
+```javascript
+// 암호 확인
+const isPasswordValid = await bcrypt.compare(password, findUser.password);
+if (!isPasswordValid)
+  return res.status(errors.passwordWrong.status).send({ msg: errors.passwordWrong.msg });
+```
+
+compare 메서드를 통해 body로 입력받은 비밀번호와 데이터베이스에 저장된 해싱 암호의 일치를 비교합니다.
+
 ### 에러메시지 획일화
 
 에러메시지가 동일한 상황에서도 다른 메시지 형태로 전달하는 경우가 많아서 모듈화 하여 일관성을 유지할 수 있도록 조치하였다.
